@@ -32,7 +32,6 @@ sudo systemctl start docker
 # Create directory and docker-compose.yml for RustDesk
 mkdir -p rustdesk && cd rustdesk
 cat <<EOF > docker-compose.yml
-version: '3'
 networks:
   rustdesk-net:
     external: false
@@ -67,17 +66,15 @@ services:
     restart: unless-stopped
 EOF
 
+# Stop and remove existing containers if they exist
+sudo docker compose down || true
+
 # Start RustDesk
 sudo docker compose up -d
 
 # Display public key
 echo "RustDesk Public Key:"
-cat ./hbbs/id_ed25519.pub
+cat ./hbbs/id_ed25519.pub 2>/dev/null || echo "Public key not generated yet. Check container logs."
 
 # Display client configuration instructions
-echo -e "\nRustDesk Client Configuration Instructions:"
-echo "1. Download RustDesk client from https://rustdesk.com/"
-echo "2. Go to Settings > Network"
-echo "3. Enter ID Server: $RUSTDESK_IP"
-echo "4. Paste the public key above into the Key field"
-echo "5. Save the configuration and connect"
+echo -e "\nIT INFRA"
