@@ -1,24 +1,24 @@
 #!/bin/bash
 
-# Function to get LAN IP automatically
+# Hàm lấy IP LAN tự động
 get_lan_ip() {
     ip addr show | grep -E 'inet [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d'/' -f1 | head -n 1
 }
 
-# Check for custom IP provided as argument
+# Kiểm tra tham số dòng lệnh để lấy IP tùy chỉnh
 if [ -z "$1" ]; then
     RUSTDESK_IP=$(get_lan_ip)
     if [ -z "$RUSTDESK_IP" ]; then
-        echo "Could not detect LAN IP automatically. Please provide a LAN IP."
-        read -p "Enter LAN IP (e.g., 192.168.1.100): " RUSTDESK_IP
+        echo "Không thể tự động lấy IP LAN. Vui lòng cung cấp IP LAN."
+        read -p "Nhập IP LAN (ví dụ: 192.168.1.100): " RUSTDESK_IP
     fi
 else
     RUSTDESK_IP="$1"
 fi
 
-echo "Using IP: $RUSTDESK_IP for RustDesk"
+echo "Sử dụng IP: $RUSTDESK_IP cho RustDesk"
 
-# Update system and install Docker
+# Cập nhật hệ thống và cài đặt Docker
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -29,7 +29,7 @@ sudo usermod -aG docker $USER
 sudo systemctl enable docker
 sudo systemctl start docker
 
-# Create directory and docker-compose.yml for RustDesk
+# Tạo thư mục và file docker-compose.yml cho RustDesk
 mkdir -p rustdesk && cd rustdesk
 cat <<EOF > docker-compose.yml
 version: '3'
@@ -67,17 +67,17 @@ services:
     restart: unless-stopped
 EOF
 
-# Start RustDesk
+# Khởi động RustDesk
 sudo docker compose up -d
 
-# Display public key
-echo "RustDesk Public Key:"
+# Hiển thị khóa công khai
+echo "Khóa công khai RustDesk:"
 cat ./hbbs/id_ed25519.pub
 
-# Display client configuration instructions
-echo -e "\nRustDesk Client Configuration Instructions:"
-echo "1. Download RustDesk client from https://rustdesk.com/"
-echo "2. Go to Settings > Network"
-echo "3. Enter ID Server: $RUSTDESK_IP"
-echo "4. Paste the public key above into the Key field"
-echo "5. Save the configuration and connect"
+# Hiển thị hướng dẫn cấu hình client
+echo -e "\nHướng dẫn cấu hình RustDesk Client:"
+echo "1. Tải RustDesk client từ https://rustdesk.com/"
+echo "2. Vào Settings > Network"
+echo "3. Nhập ID Server: $RUSTDESK_IP"
+echo "4. Dán khóa công khai ở trên vào trường Key"
+echo "5. Lưu cấu hình và kết nối"
