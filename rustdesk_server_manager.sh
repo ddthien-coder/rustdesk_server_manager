@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ngôn ngữ mặc định: Tiếng Việt
-LANG_CHOICE=1
+LANG_CHOICE=2
 
 select_language() {
   echo "Chọn ngôn ngữ / Select language / 選擇語言:"
