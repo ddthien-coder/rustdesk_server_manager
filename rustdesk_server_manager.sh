@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Ngôn ngữ mặc định: Tiếng Việt
-LANG_CHOICE=2
+# ==================== CẤU HÌNH NGÔN NGỮ ====================
+LANG_CHOICE=1
 
 select_language() {
   echo "Chọn ngôn ngữ / Select language / 選擇語言:"
@@ -10,6 +10,8 @@ select_language() {
   echo "3) 繁體中文"
   read -rp "Lựa chọn / Choose [1-3]: " LANG_CHOICE
 }
+
+select_language
 
 set_language() {
   case $LANG_CHOICE in
@@ -58,45 +60,21 @@ set_language() {
   esac
 }
 
-# Hàm hiển thị menu và xử lý lựa chọn
-main_menu() {
-  while true; do
-    echo "============================"
-    echo "${LANG_MENU_TITLE}"
-    echo "============================"
+set_language
 
-    for i in "${!LANG_MENU_OPTIONS[@]}"; do
-      printf "%d) %s\n" "$((i+1))" "${LANG_MENU_OPTIONS[$i]}"
-    done
-
-    read -rp "Chọn / Choose: " choice
-
-    case $choice in
-      1) install_rustdesk;;
-      2) update_rustdesk;;
-      3) restart_rustdesk;;
-      4) show_public_key;;
-      5) open_firewall;;
-      6) view_logs;;
-      7) exit 0;;
-      *) echo "Lựa chọn không hợp lệ / Invalid choice / 無效選項";;
-    esac
-  done
-}
-
-# Cài đặt RustDesk server
+# ==================== HÀM CHÍNH ====================
 install_rustdesk() {
   echo "$LANG_INSTALL_MSG"
-  apt update && apt install -y docker.io docker-compose git ufw
-  systemctl enable --now docker
+  sudo apt update
+  sudo apt install -y docker.io docker-compose git ufw
 
-  mkdir -p ~/rustdesk-server && cd ~/rustdesk-server
+  mkdir -p ~/rustdesk-server && cd ~/rustdesk-server || exit
   git clone https://github.com/rustdesk/rustdesk-server.git .
 
-  echo "Chọn IP nội bộ hoặc nhập domain tuỳ chọn:"
-  IP=$(hostname -I | awk '{print $1}')
-  read -rp "Dùng IP mặc định [$IP] hoặc nhập domain: " input_ip
-  SERVER_ADDR=${input_ip:-$IP}
+  echo "\nChọn IP nội bộ hoặc nhập domain tùy chọn:"
+  LOCAL_IP=$(hostname -I | awk '{print $1}')
+  read -rp "Dùng IP mặc định [$LOCAL_IP] hoặc nhập domain: " INPUT_DOMAIN
+  DOMAIN_OR_IP=${INPUT_DOMAIN:-$LOCAL_IP}
 
   cat > docker-compose-local.yml <<EOF
 version: '3.8'
@@ -104,69 +82,52 @@ services:
   hbbs:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-hbbs
-    ports:
-      - 21115:21115
-      - 21116:21116
-      - 21116:21116/udp
-      - 21117:21117
-      - 21118:21118
-      - 21119:21119
-    command: hbbs -r $SERVER_ADDR:21117
+    restart: always
+    network_mode: host
     volumes:
       - ./data:/root
+    command: hbbs -k _
+
   hbbr:
     image: rustdesk/rustdesk-server:latest
     container_name: rustdesk-hbbr
-    ports:
-      - 21114:21114
-    command: hbbr
+    restart: always
+    network_mode: host
     volumes:
       - ./data:/root
+    command: hbbr
 EOF
 
-  docker compose -f docker-compose-local.yml up -d
+  docker-compose -f docker-compose-local.yml up -d
   echo "$LANG_DONE_MSG"
-  show_public_key
 }
 
-# Cập nhật
 update_rustdesk() {
   cd ~/rustdesk-server || exit
   git pull
-  docker compose -f docker-compose-local.yml up -d --build
-  echo "$LANG_DONE_MSG"
+  docker-compose -f docker-compose-local.yml down
+  docker-compose -f docker-compose-local.yml pull
+  docker-compose -f docker-compose-local.yml up -d
 }
 
-# Khởi động lại
 restart_rustdesk() {
-  docker compose -f ~/rustdesk-server/docker-compose-local.yml restart
-  echo "$LANG_DONE_MSG"
+  docker-compose -f ~/rustdesk-server/docker-compose-local.yml restart
 }
 
-# Hiển thị Public Key
 show_public_key() {
-  echo "Public Key:"
-  docker exec rustdesk-hbbs cat /root/id_ed25519.pub || echo "Không tìm thấy key"
+  docker exec rustdesk-hbbs cat /root/.ssh/id_ed25519.pub
 }
 
-# Mở Firewall
 open_firewall() {
-  ufw allow 21114/tcp
-  ufw allow 21115/tcp
-  ufw allow 21116/tcp
-  ufw allow 21116/udp
-  ufw allow 21117/tcp
-  ufw allow 21118/tcp
-  ufw allow 21119/tcp
-  ufw --force enable
-  echo "$LANG_DONE_MSG"
+  sudo ufw allow 21114:21119/tcp
+  sudo ufw allow 21116/udp
+  sudo ufw --force enable
 }
 
-# Xem logs
 view_logs() {
   echo "1) rustdesk-hbbs"
   echo "2) rustdesk-hbbr"
-  read -rp "Chọn service để xem log: " log_choice
+  read -rp "Chọn dịch vụ (1-2): " log_choice
   case $log_choice in
     1) docker logs -f rustdesk-hbbs;;
     2) docker logs -f rustdesk-hbbr;;
@@ -174,7 +135,24 @@ view_logs() {
   esac
 }
 
-# Khởi động chương trình
-select_language
-set_language
+main_menu() {
+  while true; do
+    echo "\n===== ${LANG_MENU_TITLE} ====="
+    for i in "${!LANG_MENU_OPTIONS[@]}"; do
+      echo "$((i+1))) ${LANG_MENU_OPTIONS[$i]}"
+    done
+    read -rp "Chọn một tuỳ chọn: " choice
+    case $choice in
+      1) install_rustdesk;;
+      2) update_rustdesk;;
+      3) restart_rustdesk;;
+      4) show_public_key;;
+      5) open_firewall;;
+      6) view_logs;;
+      7) exit;;
+      *) echo "Lựa chọn không hợp lệ.";;
+    esac
+  done
+}
+
 main_menu
