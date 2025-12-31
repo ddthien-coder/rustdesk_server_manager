@@ -46,7 +46,7 @@ services:
     image: rustdesk/rustdesk-server:latest
     command: hbbs -r $RUSTDESK_IP:21117 -k _
     volumes:
-      - ./hbbs:/root
+      - /root/rustdesk-server/data:/root
     networks:
       - rustdesk-net
     depends_on:
@@ -60,7 +60,7 @@ services:
     image: rustdesk/rustdesk-server:latest
     command: hbbr -k _
     volumes:
-      - ./hbbr:/root
+      - /root/rustdesk-server/data:/root
     networks:
       - rustdesk-net
     restart: unless-stopped
