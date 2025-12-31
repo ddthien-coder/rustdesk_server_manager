@@ -74,7 +74,7 @@ sudo docker compose up -d
 
 # Display public key
 echo "RustDesk Public Key:"
-cat ./hbbs/id_ed25519.pub 2>/dev/null || echo "Public key not generated yet. Check container logs."
+cat /root/rustdesk-server/data/id_ed25519.pub 2>/dev/null || echo "Public key not generated yet. Check container logs."
 
 # Display client configuration instructions
 echo -e "\nIT INFRA"
