@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Thông tin cấu hình của bạn
+# Your configuration information
 LAN_IP=""
 PUBLIC_IP=""
 DATA_DIR="./data"
 
-echo "Đang thiết lập RustDesk Server với IP Tĩnh: $PUBLIC_IP"
+echo "Setting up RustDesk Server with Static IP: $PUBLIC_IP"
 
-# 1. Cập nhật hệ thống và cài đặt Docker (giữ nguyên logic của bạn)
+# 1. Update your system and install Docker (keep logic)
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -16,11 +16,11 @@ sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo usermod -aG docker $USER
 
-# 2. Tạo thư mục làm việc
+#2. Create a working directory
 mkdir -p rustdesk/data && cd rustdesk
 
-# 3. Tạo file docker-compose.yml tối ưu
-# Quan trọng: Tham số -r phải trỏ về IP Public để Client ngoài mạng có thể thấy Relay Server
+# 3. Create an optimized docker-compose.yml file
+# Important: The -r parameter must point to the Public IP address so that clients outside the network can see the Relay Server
 cat <<EOF > docker-compose.yml
 networks:
   rustdesk-net:
@@ -58,18 +58,18 @@ services:
     restart: unless-stopped
 EOF
 
-# 4. Khởi động dịch vụ
+#4. Start the service
 sudo docker compose down || true
 sudo docker compose up -d
 
-# 5. Lấy Public Key tự động để cấu hình Client
+#5. Automatically obtain the Public Key to configure the Client.
 sleep 5
 PUB_KEY=$(sudo cat $DATA_DIR/id_ed25519.pub)
 
 echo -e "\n========================================================"
-echo -e "THÔNG TIN CẤU HÌNH RUSTDESK CLIENT (MÁY CẦN REMOTE):"
+echo -e "RUSTDESK CLIENT CONFIGURATION INFORMATION (REMOTE CONTROL REQUIRED):"
 echo -e "ID Server: $PUBLIC_IP"
 echo -e "Relay Server: $PUBLIC_IP"
-echo -e "API Server: (Để trống)"
+echo -e "API Server: (Empty)"
 echo -e "Key: $PUB_KEY"
 echo -e "========================================================\n"
